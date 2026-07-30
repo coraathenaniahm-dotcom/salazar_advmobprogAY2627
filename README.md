@@ -7,4 +7,4 @@ A Flutter Project that focuses on advance topics. Covering the web to mobile tra
 ## Lab Activity Instance
 
 ## Discussions - Lab 01
-This activity helped me understand how to use Provider to manage the app's theme and update the UI. I also learned that adding simple features like a counter and dark mode can make an app more useful and easier to use.
+For the setState, it is used for small changes inside one screen. Like for example, increasing a counter number when a button is pressed. And for the Provider, it is used for sharing data across different screens or parts of the app. Like for example, changing the app theme from light mode to dark mode.
