@@ -1,15 +1,31 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:salazar_advmobprog/screens/setting_screen.dart';
+import 'package:salazar_advmobprog/screens/home_screen.dart';
+import 'package:salazar_advmobprog/providers/theme_provider.dart';
 
 // Starts the app
 void main() {
-  runApp(
-    // Gives the theme to the app
-    ChangeNotifierProvider(
-      create: (context) => ThemeModel(),
-      child: const MyApp(),
-    ),
-  );
+  // Catch any errors that Flutter doesn't catch
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.dumpErrorToConsole(details);
+  };
+
+  runZonedGuarded(() {
+    runApp(
+      ChangeNotifierProvider(
+        create: (context) => ThemeProvider(),
+        child: const MyApp(),
+      ),
+    );
+  }, (Object error, StackTrace stackTrace) {
+    FlutterError.reportError(FlutterErrorDetails(
+      exception: error,
+      stack: stackTrace,
+    ));
+  });
 }
 
 // Main app
@@ -18,51 +34,41 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Gets the theme
-    final themeModel = Provider.of<ThemeModel>(context);
+    final themeProvider = Provider.of<ThemeProvider>(context);
 
-    return MaterialApp(
-      // App title
-      title: 'Simple App State',
+    return ScreenUtilInit(
+      designSize: const Size(540, 720),
+      builder: (context, child) {
+        return MaterialApp(
+          // App title
+          title: 'Simple App State',
 
-      // Light mode
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
+          // Light mode
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+            useMaterial3: true,
+            fontFamily: 'Poppins',
+          ),
 
-      // Dark mode
-      darkTheme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.deepPurple,
-          brightness: Brightness.dark,
-        ),
-        useMaterial3: true,
-      ),
+          // Dark mode
+          darkTheme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: Colors.deepPurple,
+              brightness: Brightness.dark,
+            ),
+            useMaterial3: true,
+            fontFamily: 'Poppins',
+          ),
 
-      // Changes the theme
-      themeMode: themeModel.isDark ? ThemeMode.dark : ThemeMode.light,
+          themeMode: themeProvider.isDark ? ThemeMode.dark : ThemeMode.light,
+          routes: {
+            '/settings': (context) => const SettingsScreen(),
+          },
 
-      // Opens this screen first
-      home: const CounterPage(),
+          home: const HomeScreen(),
+        );
+      },
     );
-  }
-}
-
-// Saves the theme
-class ThemeModel extends ChangeNotifier {
-  // Starts with light mode
-  bool _isDark = false;
-
-  // Gets the theme
-  bool get isDark => _isDark;
-
-  // Changes the theme
-  void toggleTheme() {
-    _isDark = !_isDark;
-
-    // Updates the app
-    notifyListeners();
   }
 }
 
@@ -99,60 +105,8 @@ class _CounterPageState extends State<CounterPage> {
             // Button text
             tooltip: 'Open theme settings',
 
-            // Shows a small window
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) {
-                  // Gets the theme
-                  final themeModel =
-                      Provider.of<ThemeModel>(context, listen: false);
-
-                  // Small window
-                  return AlertDialog(
-                    // Window title
-                    title: const Text('Theme settings'),
-
-                    // Window content
-                    content: StatefulBuilder(
-                      builder: (context, setState) {
-                        return Row(
-                          // Puts the text and switch apart
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            // Switch name
-                            const Text('Dark mode'),
-
-                            // Theme switch
-                            Switch(
-                              // Current theme
-                              value: themeModel.isDark,
-
-                              // Changes the theme
-                              onChanged: (value) {
-                                themeModel.toggleTheme();
-
-                                // Updates the window
-                                setState(() {});
-                              },
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-
-                    // Close button
-                    actions: [
-                      TextButton(
-                        // Closes the window
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: const Text('Close'),
-                      ),
-                    ],
-                  );
-                },
-              );
-            },
+            // Navigate to settings page
+            onPressed: () => Navigator.pushNamed(context, '/settings'),
           ),
         ],
       ),
