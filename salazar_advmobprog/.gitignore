@@ -1,0 +1,41 @@
+# Flutter / Dart
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+
+# Flutter generated files
+.flutter-plugins
+.flutter-plugins-dependencies
+.metadata
+
+# Android
+.gradle/
+android/.gradle/
+android/app/debug/
+android/app/profile/
+android/app/release/
+android/key.properties
+
+# iOS
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/ephemeral/
+ios/Flutter/Generated.xcconfig
+ios/Flutter/flutter_export_environment.sh
+
+# IDE
+.idea/
+*.iml
+
+# Logs
+*.log
+flutter_*.log
+
+# Generated APKs
+*.apk
+*.aab
+
+# Archives
+*.zip
