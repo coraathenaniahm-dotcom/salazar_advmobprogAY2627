@@ -7,7 +7,9 @@ import 'package:salazar_advmobprog/widgets/custom_text.dart';
 import 'product_detail_screen.dart';
 
 class ProductScreen extends StatefulWidget {
-  const ProductScreen({super.key});
+  final VoidCallback? onCartPressed;
+
+  const ProductScreen({super.key, this.onCartPressed});
 
   @override
   State<ProductScreen> createState() => _ProductScreenState();

@@ -1,12 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:salazar_advmobprog/models/product.dart';
+import 'package:salazar_advmobprog/services/cart_service.dart';
 import 'package:salazar_advmobprog/widgets/custom_text.dart';
 
-class ProductDetailScreen extends StatelessWidget {
+class ProductDetailScreen extends StatefulWidget {
   final Product product;
 
   const ProductDetailScreen({super.key, required this.product});
+
+  @override
+  State<ProductDetailScreen> createState() => _ProductDetailScreenState();
+}
+
+class _ProductDetailScreenState extends State<ProductDetailScreen> {
+  int _quantity = 1;
+  bool _isAddingToCart = false;
+  final CartService _cartService = CartService();
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +41,7 @@ class ProductDetailScreen extends StatelessWidget {
               ClipRRect(
                 borderRadius: BorderRadius.circular(12.r),
                 child: Image.network(
-                  product.thumbnail,
+                  widget.product.thumbnail,
                   width: double.infinity,
                   height: 300.h,
                   fit: BoxFit.cover,
@@ -48,13 +58,13 @@ class ProductDetailScreen extends StatelessWidget {
               ),
               SizedBox(height: 20.h),
               CustomText(
-                text: product.title,
+                text: widget.product.title,
                 fontSize: 22.sp,
                 fontWeight: FontWeight.bold,
               ),
               SizedBox(height: 12.h),
               CustomText(
-                text: '\$${product.price.toStringAsFixed(2)}',
+                text: '\$${widget.product.price.toStringAsFixed(2)}',
                 fontSize: 18.sp,
                 fontWeight: FontWeight.w600,
                 color: Colors.green.shade700,
@@ -65,7 +75,7 @@ class ProductDetailScreen extends StatelessWidget {
                   Icon(Icons.star, color: Colors.amber, size: 20.sp),
                   SizedBox(width: 8.w),
                   CustomText(
-                    text: '${product.rating} • ${product.stock} in stock',
+                    text: '${widget.product.rating} • ${widget.product.stock} in stock',
                     fontSize: 14.sp,
                   ),
                 ],
@@ -78,42 +88,87 @@ class ProductDetailScreen extends StatelessWidget {
               ),
               SizedBox(height: 8.h),
               CustomText(
-                text: product.description,
+                text: widget.product.description,
                 fontSize: 13.sp,
               ),
               SizedBox(height: 20.h),
               CustomText(
-                text: 'Category: ${product.category}',
+                text: 'Category: ${widget.product.category}',
                 fontSize: 13.sp,
               ),
               SizedBox(height: 8.h),
               CustomText(
-                text: 'Brand: ${product.brand}',
+                text: 'Brand: ${widget.product.brand}',
                 fontSize: 13.sp,
+              ),
+              SizedBox(height: 20.h),
+              Row(
+                children: [
+                  CustomText(
+                    text: 'Quantity:',
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  SizedBox(width: 12.w),
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey),
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          onPressed: _quantity > 1
+                              ? () => setState(() => _quantity--)
+                              : null,
+                          icon: const Icon(Icons.remove),
+                          iconSize: 18.sp,
+                        ),
+                        SizedBox(
+                          width: 40.w,
+                          child: Center(
+                            child: CustomText(
+                              text: '$_quantity',
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: _quantity < widget.product.stock
+                              ? () => setState(() => _quantity++)
+                              : null,
+                          icon: const Icon(Icons.add),
+                          iconSize: 18.sp,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
               SizedBox(height: 20.h),
               SizedBox(
                 width: double.infinity,
                 height: 50.h,
                 child: ElevatedButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: CustomText(
-                          text: '${product.title} added to cart',
-                          fontSize: 14.sp,
+                  onPressed: _isAddingToCart ? null : _addToCart,
+                  child: _isAddingToCart
+                      ? SizedBox(
+                          height: 24.h,
+                          width: 24.w,
+                          child: const CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                          ),
+                        )
+                      : CustomText(
+                          text: 'Add to Cart',
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.bold,
                           color: Colors.white,
                         ),
-                        duration: const Duration(seconds: 2),
-                      ),
-                    );
-                  },
-                  child: CustomText(
-                    text: 'Add to Cart',
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
                 ),
               ),
             ],
@@ -121,5 +176,52 @@ class ProductDetailScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _addToCart() async {
+    setState(() => _isAddingToCart = true);
+
+    try {
+      await _cartService.addToCart(
+        widget.product.id,
+        _quantity,
+        userId: 1,
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: CustomText(
+            text: '${widget.product.title} added to cart',
+            fontSize: 14.sp,
+            color: Colors.white,
+          ),
+          duration: const Duration(seconds: 2),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // Reset quantity
+      setState(() => _quantity = 1);
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: CustomText(
+            text: 'Error: ${e.toString()}',
+            fontSize: 14.sp,
+            color: Colors.white,
+          ),
+          duration: const Duration(seconds: 2),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isAddingToCart = false);
+      }
+    }
   }
 }

@@ -4,6 +4,7 @@ import 'package:salazar_advmobprog/constants.dart';
 import 'package:salazar_advmobprog/widgets/custom_font.dart';
 
 import 'product_screen.dart';
+import 'cart_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final String username;
@@ -15,77 +16,80 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _selectedIndex = 0;
-  final PageController _pageController = PageController();
+  bool _isOnCartScreen = false;
 
   @override
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
-      child: Scaffold(
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          elevation: 2,
-          title: CustomText(
-                  text: _selectedIndex == 0
-                      ? 'Shop'
-                      : _selectedIndex == 1
-                          ? 'Chat'
-                          : _selectedIndex == 2
-                              ? 'Profile'
-                              : 'Home',
-                  fontSize: 20.sp,
-                  color: FB_LIGHT_PRIMARY,
-                  fontWeight: FontWeight.w800,
-                ),
-          actions: [
-            IconButton(
-              icon: Icon(Icons.settings, size: 24.sp),
-              onPressed: () =>
-                  Navigator.pushNamed(context, '/settings'),
-            ),
-          ],
-        ),
-        body: PageView(
-          physics: const NeverScrollableScrollPhysics(),
-          controller: _pageController,
-          children: const <Widget>[
-            ProductScreen(),
-          ],
-          onPageChanged: (page) {
+      child: WillPopScope(
+        onWillPop: () async {
+          if (_isOnCartScreen) {
             setState(() {
-              _selectedIndex = page;
+              _isOnCartScreen = false;
             });
-          },
-        ),
-        bottomNavigationBar: BottomNavigationBar(
-          showSelectedLabels: false,
-          showUnselectedLabels: false,
-          onTap: _onTappedBar,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.shop_2),
-              label: 'Shop',
+            return false;
+          }
+          return true;
+        },
+        child: Scaffold(
+          appBar: AppBar(
+            automaticallyImplyLeading: false,
+            elevation: 2,
+            leading: _isOnCartScreen
+                ? IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: () {
+                      setState(() {
+                        _isOnCartScreen = false;
+                      });
+                    },
+                  )
+                : null,
+            title: CustomText(
+              text: _isOnCartScreen ? 'Cart' : 'Shop',
+              fontSize: 20.sp,
+              color: FB_LIGHT_PRIMARY,
+              fontWeight: FontWeight.w800,
             ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.chat),
-              label: 'Chat',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person),
-              label: 'Profile',
-            ),
-          ],
-          currentIndex: _selectedIndex,
+            actions: [
+              if (!_isOnCartScreen)
+                IconButton(
+                  icon: Icon(Icons.shopping_cart, size: 24.sp),
+                  onPressed: () {
+                    setState(() {
+                      _isOnCartScreen = true;
+                    });
+                  },
+                ),
+              if (!_isOnCartScreen)
+                IconButton(
+                  icon: Icon(Icons.settings, size: 24.sp),
+                  onPressed: () =>
+                      Navigator.pushNamed(context, '/settings'),
+                ),
+            ],
+          ),
+          body: _isOnCartScreen ? const CartScreen() : ProductScreen(
+            onCartPressed: () {
+              setState(() {
+                _isOnCartScreen = true;
+              });
+            },
+          ),
+          floatingActionButton: !_isOnCartScreen
+              ? FloatingActionButton(
+                  onPressed: () {
+                    // Chat functionality
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Chat feature coming soon')),
+                    );
+                  },
+                  child: const Icon(Icons.chat),
+                )
+              : null,
         ),
       ),
     );
-  }
-
-  void _onTappedBar(int value) {
-    setState(() {
-      _selectedIndex = value;
-    });
-    _pageController.jumpToPage(value);
   }
 }
