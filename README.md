@@ -6,5 +6,5 @@ A Flutter Project that focuses on advance topics. Covering the web to mobile tra
 
 ## Lab Activity Instance
 
-## Discussions - Lab 02
-The 
+## Discussions - Lab 03
+The cart model holds the cart data, the service uses getById to ask the API for one specific item, and the screen shows that item to us. Basically, the screen asks the service to grab the item, the service brings back the data and puts it in the model, and then the screen displays it since each part just does its own job.
