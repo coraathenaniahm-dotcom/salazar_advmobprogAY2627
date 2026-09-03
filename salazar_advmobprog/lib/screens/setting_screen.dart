@@ -27,10 +27,25 @@ class SettingsScreen extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  CustomText(text: 'Dark mode', fontSize: 14.sp),
-                  Switch(
+                  Row(
+                    children: [
+                      Icon(
+                        theme.isDark ? Icons.dark_mode : Icons.light_mode,
+                        color: theme.isDark
+                            ? const Color(0xFFFFBE1B)
+                            : const Color(0xFF394B9B),
+                      ),
+                      SizedBox(width: 10.w),
+                      CustomText(
+                        text: theme.isDark ? 'Dark mode' : 'Light mode',
+                        fontSize: 14.sp,
+                      ),
+                    ],
+                  ),
+                  Switch.adaptive(
                     value: theme.isDark,
-                    onChanged: (v) => theme.toggleTheme(),
+                    activeThumbColor: const Color(0xFFFFBE1B),
+                    onChanged: theme.setDarkMode,
                   ),
                 ],
               ),

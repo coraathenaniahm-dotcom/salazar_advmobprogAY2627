@@ -8,8 +8,9 @@ import 'product_detail_screen.dart';
 
 class ProductScreen extends StatefulWidget {
   final VoidCallback? onCartPressed;
+  final int userId;
 
-  const ProductScreen({super.key, this.onCartPressed});
+  const ProductScreen({super.key, this.onCartPressed, this.userId = 1});
 
   @override
   State<ProductScreen> createState() => _ProductScreenState();
@@ -113,6 +114,7 @@ class _ProductScreenState extends State<ProductScreen> {
                         MaterialPageRoute(
                           builder: (context) => ProductDetailScreen(
                             product: product,
+                            userId: widget.userId,
                           ),
                         ),
                       ),
@@ -130,10 +132,8 @@ class _ProductScreenState extends State<ProductScreen> {
                                 product.thumbnail,
                                 fit: BoxFit.cover,
                                 width: double.infinity,
-                                errorBuilder: (context, error, stackTrace) => Icon(
-                                  Icons.image,
-                                  size: 24.sp,
-                                ),
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Icon(Icons.image, size: 24.sp),
                               ),
                             ),
                             Padding(
@@ -150,7 +150,8 @@ class _ProductScreenState extends State<ProductScreen> {
                                   ),
                                   SizedBox(height: 4.h),
                                   CustomText(
-                                    text: '\$${product.price.toStringAsFixed(2)}',
+                                    text:
+                                        '\$${product.price.toStringAsFixed(2)}',
                                     fontSize: 13.sp,
                                     fontWeight: FontWeight.w600,
                                   ),

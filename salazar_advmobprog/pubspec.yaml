@@ -13,6 +13,8 @@ dependencies:
   provider: ^6.0.6
   flutter_screenutil: ^5.9.3
   http: ^1.2.2
+  shared_preferences: ^2.3.2
+  flutter_svg: ^2.0.17
 
 dev_dependencies:
   flutter_test:
@@ -23,6 +25,7 @@ flutter:
   uses-material-design: true
   assets:
     - icons/NU_shield.svg
+    - assets/images/nubdexchange_logo.png
   fonts:
     - family: Poppins
       fonts:

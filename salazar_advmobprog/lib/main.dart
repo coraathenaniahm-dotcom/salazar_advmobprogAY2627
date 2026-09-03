@@ -4,7 +4,11 @@ import 'package:provider/provider.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:salazar_advmobprog/screens/setting_screen.dart';
 import 'package:salazar_advmobprog/screens/home_screen.dart';
+import 'package:salazar_advmobprog/screens/login_screen.dart';
+import 'package:salazar_advmobprog/screens/profile_screen.dart';
+import 'package:salazar_advmobprog/screens/splash_screen.dart';
 import 'package:salazar_advmobprog/providers/theme_provider.dart';
+import 'package:salazar_advmobprog/models/user.dart';
 
 // Starts the app
 void main() {
@@ -13,19 +17,21 @@ void main() {
     FlutterError.dumpErrorToConsole(details);
   };
 
-  runZonedGuarded(() {
-    runApp(
-      ChangeNotifierProvider(
-        create: (context) => ThemeProvider(),
-        child: const MyApp(),
-      ),
-    );
-  }, (Object error, StackTrace stackTrace) {
-    FlutterError.reportError(FlutterErrorDetails(
-      exception: error,
-      stack: stackTrace,
-    ));
-  });
+  runZonedGuarded(
+    () {
+      runApp(
+        ChangeNotifierProvider(
+          create: (context) => ThemeProvider(),
+          child: const MyApp(),
+        ),
+      );
+    },
+    (Object error, StackTrace stackTrace) {
+      FlutterError.reportError(
+        FlutterErrorDetails(exception: error, stack: stackTrace),
+      );
+    },
+  );
 }
 
 // Main app
@@ -63,9 +69,20 @@ class MyApp extends StatelessWidget {
           themeMode: themeProvider.isDark ? ThemeMode.dark : ThemeMode.light,
           routes: {
             '/settings': (context) => const SettingsScreen(),
+            '/login': (context) => const LoginScreen(),
+            '/home': (context) {
+              final arguments = ModalRoute.of(context)?.settings.arguments;
+              final userId = arguments is User
+                  ? arguments.id
+                  : arguments is Map<String, dynamic>
+                  ? arguments['id'] as int?
+                  : null;
+              return HomeScreen(userId: userId ?? 1);
+            },
+            '/profile': (context) => const ProfileScreen(),
           },
 
-          home: const HomeScreen(),
+          home: const SplashScreen(),
         );
       },
     );

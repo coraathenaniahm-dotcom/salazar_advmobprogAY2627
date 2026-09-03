@@ -6,8 +6,13 @@ import 'package:salazar_advmobprog/widgets/custom_text.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final Product product;
+  final int userId;
 
-  const ProductDetailScreen({super.key, required this.product});
+  const ProductDetailScreen({
+    super.key,
+    required this.product,
+    this.userId = 1,
+  });
 
   @override
   State<ProductDetailScreen> createState() => _ProductDetailScreenState();
@@ -49,10 +54,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     width: double.infinity,
                     height: 300.h,
                     color: Colors.grey.shade300,
-                    child: Icon(
-                      Icons.image,
-                      size: 48.sp,
-                    ),
+                    child: Icon(Icons.image, size: 48.sp),
                   ),
                 ),
               ),
@@ -75,7 +77,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   Icon(Icons.star, color: Colors.amber, size: 20.sp),
                   SizedBox(width: 8.w),
                   CustomText(
-                    text: '${widget.product.rating} • ${widget.product.stock} in stock',
+                    text:
+                        '${widget.product.rating} • ${widget.product.stock} in stock',
                     fontSize: 14.sp,
                   ),
                 ],
@@ -87,10 +90,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 fontWeight: FontWeight.bold,
               ),
               SizedBox(height: 8.h),
-              CustomText(
-                text: widget.product.description,
-                fontSize: 13.sp,
-              ),
+              CustomText(text: widget.product.description, fontSize: 13.sp),
               SizedBox(height: 20.h),
               CustomText(
                 text: 'Category: ${widget.product.category}',
@@ -185,7 +185,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       await _cartService.addToCart(
         widget.product.id,
         _quantity,
-        userId: 1,
+        userId: widget.userId,
       );
 
       if (!mounted) return;
