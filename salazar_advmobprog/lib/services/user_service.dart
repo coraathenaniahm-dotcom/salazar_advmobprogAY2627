@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -8,7 +9,147 @@ import '../constants.dart';
 import '../models/user.dart';
 
 class UserService {
-  // Logs in a user and save session
+  static const String dummyJsonLoginType = 'dummyjson';
+  static const String firebaseLoginType = 'firebase';
+
+  final firebase_auth.FirebaseAuth firebaseAuth =
+      firebase_auth.FirebaseAuth.instance;
+
+  Stream<firebase_auth.User?> get authStateChanges =>
+      firebaseAuth.authStateChanges();
+
+  Future<firebase_auth.UserCredential> signIn({
+    required String email,
+    required String password,
+  }) async {
+    final credential = await firebaseAuth.signInWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('loginType', firebaseLoginType);
+    return credential;
+  }
+
+  Future<firebase_auth.UserCredential> createAccount({
+    required String email,
+    required String password,
+  }) async {
+    final credential = await firebaseAuth.createUserWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('loginType', firebaseLoginType);
+    return credential;
+  }
+
+  Future<void> signOut() async {
+    await firebaseAuth.signOut();
+  }
+
+  Future<void> updateUsername({required String username}) async {
+    if (await getLoginType() == firebaseLoginType) {
+      final currentUser = firebaseAuth.currentUser;
+      if (currentUser == null) {
+        throw firebase_auth.FirebaseAuthException(
+          code: 'no-current-user',
+          message: 'No user is currently signed in.',
+        );
+      }
+      await currentUser.updateDisplayName(username);
+
+      final userData = await getUserData();
+      if (userData.isNotEmpty) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(
+          'userData',
+          jsonEncode({...userData, 'username': username}),
+        );
+      }
+      return;
+    }
+
+    final userData = await getUserData();
+    final userId = userData['id'];
+    if (userId == null) throw Exception('No saved user session');
+
+    // DummyJSON users created through /users/add are not reliably updateable.
+    await _saveUserData({...userData, 'username': username});
+  }
+
+  Future<void> deleteAccount({
+    required String email,
+    required String password,
+  }) async {
+    if (await getLoginType() != firebaseLoginType) {
+      final userData = await getUserData();
+      final userId = userData['id'];
+      if (userId == null) throw Exception('No saved user session');
+
+      final response = await http.delete(Uri.parse('$host/users/$userId'));
+      if (response.statusCode != 200 && response.statusCode != 404) {
+        throw Exception('Failed to delete account: ${response.statusCode}');
+      }
+      // A 404 means the simulated DummyJSON user is already absent remotely.
+      await logout();
+      return;
+    }
+
+    final credential = firebase_auth.EmailAuthProvider.credential(
+      email: email,
+      password: password,
+    );
+
+    final currentUser = firebaseAuth.currentUser;
+    if (currentUser == null) {
+      throw firebase_auth.FirebaseAuthException(
+        code: 'no-current-user',
+        message: 'No user is currently signed in.',
+      );
+    }
+
+    await currentUser.reauthenticateWithCredential(credential);
+    await currentUser.delete();
+    await firebaseAuth.signOut();
+  }
+
+  Future<void> resetPasswordFromCurrentPassword({
+    required String currentPassword,
+    required String newPassword,
+    required String email,
+  }) async {
+    if (await getLoginType() != firebaseLoginType) {
+      final userData = await getUserData();
+      final userId = userData['id'];
+      if (userId == null) throw Exception('No saved user session');
+
+      final updatedUser = await _updateDummyJsonUser(
+        userId,
+        {'password': newPassword},
+      );
+      await _saveUserData(updatedUser);
+      return;
+    }
+
+    final credential = firebase_auth.EmailAuthProvider.credential(
+      email: email,
+      password: currentPassword,
+    );
+
+    final currentUser = firebaseAuth.currentUser;
+    if (currentUser == null) {
+      throw firebase_auth.FirebaseAuthException(
+        code: 'no-current-user',
+        message: 'No user is currently signed in.',
+      );
+    }
+
+    await currentUser.reauthenticateWithCredential(credential);
+    await currentUser.updatePassword(newPassword);
+  }
+
+  // Authenticate a user and save the session.
   Future<User> login(String username, String password) async {
     try {
       final response = await http.post(
@@ -28,9 +169,10 @@ class UserService {
         final user = User.fromJson(data);
 
         final prefs = await SharedPreferences.getInstance();
-        // Keep the login state and user details for later use.
+        // Save the authenticated user locally.
         await prefs.setBool('isLoggedIn', true);
         await prefs.setString('userData', jsonEncode(user.toJson()));
+        await prefs.setString('loginType', dummyJsonLoginType);
 
         return user;
       } else if (response.statusCode == 408) {
@@ -47,7 +189,7 @@ class UserService {
     }
   }
 
-  // Gets one user from the server by ID.
+  // Fetch one user by ID.
   Future<User> getUserById(int userId) async {
     try {
       final response = await http.get(
@@ -75,7 +217,7 @@ class UserService {
     }
   }
 
-  // Gets all users from the server.
+  // Fetch all users.
   Future<List<User>> getAllUsers() async {
     try {
       final response = await http.get(
@@ -104,12 +246,12 @@ class UserService {
     }
   }
 
-  // Keeps a short alias for getting all users.
+  // Alias for fetching users.
   Future<List<User>> getUsers() async {
     return getAllUsers();
   }
 
-  // Registers a new user and saves the session locally.
+  // Register a user and save the session.
   Future<User> register(Map<String, dynamic> userData) async {
     try {
       final response = await http.post(
@@ -126,9 +268,10 @@ class UserService {
         final user = User.fromJson(data);
 
         final prefs = await SharedPreferences.getInstance();
-        // Keep the new user logged in after registration.
+        // Save the newly registered user locally.
         await prefs.setBool('isLoggedIn', true);
         await prefs.setString('userData', jsonEncode(user.toJson()));
+        await prefs.setString('loginType', dummyJsonLoginType);
 
         return user;
       } else if (response.statusCode == 408) {
@@ -145,13 +288,13 @@ class UserService {
     }
   }
 
-  // Checks whether a user is currently logged in.
+  // Check whether a session exists.
   Future<bool> isLoggedIn() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool('isLoggedIn') ?? false;
   }
 
-  // Reads the saved user details.
+  // Read the saved user data.
   Future<Map<String, dynamic>> getUserData() async {
     final prefs = await SharedPreferences.getInstance();
     final rawData = prefs.getString('userData');
@@ -163,12 +306,50 @@ class UserService {
     return jsonDecode(rawData);
   }
 
-  // Clears the saved login session.
+  Future<String> getLoginType() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('loginType') ?? dummyJsonLoginType;
+  }
+
+  Future<Map<String, dynamic>> _updateDummyJsonUser(
+    dynamic userId,
+    Map<String, dynamic> changes,
+  ) async {
+    final response = await http.put(
+      Uri.parse('$host/users/$userId'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(changes),
+    );
+
+    if (response.statusCode == 404) {
+      // DummyJSON does not persist users created through /users/add.
+      return {...await getUserData(), ...changes};
+    }
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to update user: ${response.statusCode}');
+    }
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
+  Future<void> _saveUserData(Map<String, dynamic> userData) async {
+    final prefs = await SharedPreferences.getInstance();
+    final currentData = await getUserData();
+    await prefs.setBool('isLoggedIn', true);
+    await prefs.setString(
+      'userData',
+      jsonEncode({...currentData, ...userData}),
+    );
+  }
+
+  // Clear the saved session.
   Future<void> logout() async {
     try {
+      await signOut();
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('isLoggedIn', false);
       await prefs.remove('userData');
+      await prefs.remove('loginType');
       return;
     } catch (e) {
       throw Exception('Error logging out: $e');

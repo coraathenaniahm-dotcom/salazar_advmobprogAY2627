@@ -15,12 +15,15 @@ class ProductDetailScreen extends StatefulWidget {
   });
 
   @override
-  State<ProductDetailScreen> createState() => _ProductDetailScreenState();
+  State<ProductDetailScreen> createState() =>
+      _ProductDetailScreenState();
 }
 
-class _ProductDetailScreenState extends State<ProductDetailScreen> {
+class _ProductDetailScreenState
+    extends State<ProductDetailScreen> {
   int _quantity = 1;
   bool _isAddingToCart = false;
+
   final CartService _cartService = CartService();
 
   @override
@@ -39,7 +42,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+          padding: EdgeInsets.symmetric(
+            horizontal: 16.w,
+            vertical: 16.h,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -50,31 +56,47 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   width: double.infinity,
                   height: 300.h,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    width: double.infinity,
-                    height: 300.h,
-                    color: Colors.grey.shade300,
-                    child: Icon(Icons.image, size: 48.sp),
-                  ),
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      width: double.infinity,
+                      height: 300.h,
+                      color: Colors.grey.shade300,
+                      child: Icon(
+                        Icons.image,
+                        size: 48.sp,
+                      ),
+                    );
+                  },
                 ),
               ),
+
               SizedBox(height: 20.h),
+
               CustomText(
                 text: widget.product.title,
                 fontSize: 22.sp,
                 fontWeight: FontWeight.bold,
               ),
+
               SizedBox(height: 12.h),
+
               CustomText(
-                text: '\$${widget.product.price.toStringAsFixed(2)}',
+                text:
+                    '\$${widget.product.price.toStringAsFixed(2)}',
                 fontSize: 18.sp,
                 fontWeight: FontWeight.w600,
                 color: Colors.green.shade700,
               ),
+
               SizedBox(height: 12.h),
+
               Row(
                 children: [
-                  Icon(Icons.star, color: Colors.amber, size: 20.sp),
+                  Icon(
+                    Icons.star,
+                    color: Colors.amber,
+                    size: 20.sp,
+                  ),
                   SizedBox(width: 8.w),
                   CustomText(
                     text:
@@ -83,25 +105,40 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   ),
                 ],
               ),
+
               SizedBox(height: 20.h),
+
               CustomText(
                 text: 'Description',
                 fontSize: 16.sp,
                 fontWeight: FontWeight.bold,
               ),
+
               SizedBox(height: 8.h),
-              CustomText(text: widget.product.description, fontSize: 13.sp),
-              SizedBox(height: 20.h),
+
               CustomText(
-                text: 'Category: ${widget.product.category}',
+                text: widget.product.description,
                 fontSize: 13.sp,
               ),
-              SizedBox(height: 8.h),
+
+              SizedBox(height: 20.h),
+
               CustomText(
-                text: 'Brand: ${widget.product.brand}',
+                text:
+                    'Category: ${widget.product.category}',
                 fontSize: 13.sp,
               ),
+
+              SizedBox(height: 8.h),
+
+              CustomText(
+                text:
+                    'Brand: ${widget.product.brand}',
+                fontSize: 13.sp,
+              ),
+
               SizedBox(height: 20.h),
+
               Row(
                 children: [
                   CustomText(
@@ -109,36 +146,58 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
                   ),
+
                   SizedBox(width: 12.w),
+
                   Container(
                     decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey),
-                      borderRadius: BorderRadius.circular(8.r),
+                      border: Border.all(
+                        color: Colors.grey,
+                      ),
+                      borderRadius:
+                          BorderRadius.circular(8.r),
                     ),
                     child: Row(
                       children: [
                         IconButton(
                           onPressed: _quantity > 1
-                              ? () => setState(() => _quantity--)
+                              ? () {
+                                  setState(() {
+                                    _quantity--;
+                                  });
+                                }
                               : null,
-                          icon: const Icon(Icons.remove),
+                          icon: const Icon(
+                            Icons.remove,
+                          ),
                           iconSize: 18.sp,
                         ),
+
                         SizedBox(
                           width: 40.w,
                           child: Center(
                             child: CustomText(
                               text: '$_quantity',
                               fontSize: 14.sp,
-                              fontWeight: FontWeight.w600,
+                              fontWeight:
+                                  FontWeight.w600,
                             ),
                           ),
                         ),
+
                         IconButton(
-                          onPressed: _quantity < widget.product.stock
-                              ? () => setState(() => _quantity++)
-                              : null,
-                          icon: const Icon(Icons.add),
+                          onPressed:
+                              _quantity <
+                                      widget.product.stock
+                                  ? () {
+                                      setState(() {
+                                        _quantity++;
+                                      });
+                                    }
+                                  : null,
+                          icon: const Icon(
+                            Icons.add,
+                          ),
                           iconSize: 18.sp,
                         ),
                       ],
@@ -146,19 +205,42 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   ),
                 ],
               ),
+
               SizedBox(height: 20.h),
+
               SizedBox(
                 width: double.infinity,
                 height: 50.h,
                 child: ElevatedButton(
-                  onPressed: _isAddingToCart ? null : _addToCart,
+                  onPressed: _isAddingToCart
+                      ? null
+                      : _addToCart,
+                  style:
+                      ElevatedButton.styleFrom(
+                    backgroundColor:
+                        const Color(0xFF394B9D),
+                    foregroundColor:
+                        Colors.white,
+                    disabledBackgroundColor:
+                        const Color(0xFF394B9D),
+                    minimumSize:
+                        Size.fromHeight(50.h),
+                    shape:
+                        RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(12.r),
+                    ),
+                  ),
                   child: _isAddingToCart
                       ? SizedBox(
                           height: 24.h,
                           width: 24.w,
-                          child: const CircularProgressIndicator(
+                          child:
+                              const CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
+                            valueColor:
+                                AlwaysStoppedAnimation<
+                                    Color>(
                               Colors.white,
                             ),
                           ),
@@ -166,7 +248,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       : CustomText(
                           text: 'Add to Cart',
                           fontSize: 16.sp,
-                          fontWeight: FontWeight.bold,
+                          fontWeight:
+                              FontWeight.bold,
                           color: Colors.white,
                         ),
                 ),
@@ -179,7 +262,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   Future<void> _addToCart() async {
-    setState(() => _isAddingToCart = true);
+    setState(() {
+      _isAddingToCart = true;
+    });
 
     try {
       await _cartService.addToCart(
@@ -193,34 +278,40 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: CustomText(
-            text: '${widget.product.title} added to cart',
+            text:
+                '${widget.product.title} added to cart',
             fontSize: 14.sp,
             color: Colors.white,
           ),
-          duration: const Duration(seconds: 2),
+          duration:
+              const Duration(seconds: 2),
           backgroundColor: Colors.green,
         ),
       );
 
-      // Reset quantity
-      setState(() => _quantity = 1);
+      setState(() {
+        _quantity = 1;
+      });
     } catch (e) {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: CustomText(
-            text: 'Error: ${e.toString()}',
+            text: e.toString(),
             fontSize: 14.sp,
             color: Colors.white,
           ),
-          duration: const Duration(seconds: 2),
+          duration:
+              const Duration(seconds: 3),
           backgroundColor: Colors.red,
         ),
       );
     } finally {
       if (mounted) {
-        setState(() => _isAddingToCart = false);
+        setState(() {
+          _isAddingToCart = false;
+        });
       }
     }
   }

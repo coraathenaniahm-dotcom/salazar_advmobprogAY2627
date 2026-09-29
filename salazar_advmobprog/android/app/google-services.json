@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "927128689139",
+    "project_id": "advmobprog-firebase-7056b",
+    "storage_bucket": "advmobprog-firebase-7056b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:927128689139:android:29c668f4d4113beca69a86",
+        "android_client_info": {
+          "package_name": "com.example.salazar_advmobprog"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDrzV1JQIeIf2P6K_qx_loxw8qhKVLWD_A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:927128689139:android:a5f0f65b2b7a488ea69a86",
+        "android_client_info": {
+          "package_name": "com.example.salazar_mobprog"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDrzV1JQIeIf2P6K_qx_loxw8qhKVLWD_A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

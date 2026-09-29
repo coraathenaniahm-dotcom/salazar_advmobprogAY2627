@@ -1,6 +1,9 @@
 name: salazar_advmobprog
+
 description: "A new Flutter project."
+
 publish_to: "none"
+
 version: 1.0.0+1
 
 environment:
@@ -9,12 +12,16 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+
   cupertino_icons: ^1.0.8
   provider: ^6.0.6
   flutter_screenutil: ^5.9.3
   http: ^1.2.2
   shared_preferences: ^2.3.2
   flutter_svg: ^2.0.17
+  firebase_core: ^4.15.0
+  firebase_auth: ^6.7.0
+  flutter_dotenv: ^5.2.1
 
 dev_dependencies:
   flutter_test:
@@ -23,12 +30,13 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
   assets:
+    - assets/.env
     - icons/NU_shield.svg
     - assets/images/nubdexchange_logo.png
+
   fonts:
     - family: Poppins
       fonts:
         - asset: fonts/Poppins-Regular.ttf
-
-

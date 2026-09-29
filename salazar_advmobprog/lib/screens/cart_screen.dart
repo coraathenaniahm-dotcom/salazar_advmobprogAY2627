@@ -44,24 +44,9 @@ class _CartScreenState extends State<CartScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: const Color(0xFF3D5A9B),
-        title: CustomText(
-          text: 'Cart',
-          fontSize: 18.sp,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
-        centerTitle: false,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings, color: Colors.white),
-            onPressed: () {},
-          ),
-        ],
-      ),
       body: FutureBuilder<Cart>(
         future: cartFuture,
         builder: (context, snapshot) {
@@ -103,11 +88,11 @@ class _CartScreenState extends State<CartScreen> {
                       padding: EdgeInsets.only(bottom: 12.h),
                       child: Container(
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(12.r),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
+                              color: colorScheme.shadow.withValues(alpha: 0.2),
                               blurRadius: 4.r,
                               offset: Offset(0, 2.h),
                             ),
@@ -118,7 +103,6 @@ class _CartScreenState extends State<CartScreen> {
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              // Product Image
                               Container(
                                 width: 70.w,
                                 height: 70.h,
@@ -135,7 +119,6 @@ class _CartScreenState extends State<CartScreen> {
                                 ),
                               ),
                               SizedBox(width: 12.w),
-                              // Product Details
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -149,7 +132,6 @@ class _CartScreenState extends State<CartScreen> {
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                     SizedBox(height: 6.h),
-                                    // Price in orange
                                     CustomText(
                                       text:
                                           '\$${discountedPrice.toStringAsFixed(2)}',
@@ -158,7 +140,6 @@ class _CartScreenState extends State<CartScreen> {
                                       color: const Color(0xFFFFA500),
                                     ),
                                     SizedBox(height: 4.h),
-                                    // Discount info on one line
                                     Row(
                                       children: [
                                         if (discountPercent > 0)
@@ -180,11 +161,9 @@ class _CartScreenState extends State<CartScreen> {
                                 ),
                               ),
                               SizedBox(width: 8.w),
-                              // Quantity Controls on the right
                               Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  // Add button (yellow circle)
                                   GestureDetector(
                                     onTap: () => _updateQuantity(
                                       cartProduct.id,
@@ -201,19 +180,17 @@ class _CartScreenState extends State<CartScreen> {
                                       child: Icon(
                                         Icons.add,
                                         size: 18.sp,
-                                        color: Colors.black,
+                                        color: colorScheme.onSurface,
                                       ),
                                     ),
                                   ),
                                   SizedBox(height: 6.h),
-                                  // Quantity display
                                   CustomText(
                                     text: currentQty.toString(),
                                     fontSize: 13.sp,
                                     fontWeight: FontWeight.bold,
                                   ),
                                   SizedBox(height: 6.h),
-                                  // Minus button
                                   GestureDetector(
                                     onTap: () => _updateQuantity(
                                       cartProduct.id,
@@ -233,7 +210,7 @@ class _CartScreenState extends State<CartScreen> {
                                       child: Icon(
                                         Icons.remove,
                                         size: 18.sp,
-                                        color: Colors.black,
+                                        color: colorScheme.onSurface,
                                       ),
                                     ),
                                   ),
@@ -247,11 +224,10 @@ class _CartScreenState extends State<CartScreen> {
                   },
                 ),
               ),
-              // Bottom Summary and Button
               Container(
                 padding: EdgeInsets.all(16.r),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: colorScheme.surface,
                   border: Border(top: BorderSide(color: Colors.grey[200]!)),
                 ),
                 child: Column(
@@ -323,7 +299,7 @@ class _CartScreenState extends State<CartScreen> {
                         text: 'Confirm Order',
                         fontSize: 16.sp,
                         fontWeight: FontWeight.w600,
-                        color: Colors.black,
+                        color: colorScheme.onSurface,
                       ),
                     ),
                   ],

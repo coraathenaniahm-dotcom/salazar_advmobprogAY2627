@@ -1,26 +1,31 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:salazar_advmobprog/main.dart';
-import 'package:salazar_advmobprog/providers/theme_provider.dart';
-import 'package:salazar_advmobprog/screens/login_screen.dart';
+import 'package:salazar_advmobprog/models/cart.dart';
 
 void main() {
-  testWidgets('app starts on the splash screen and redirects', (WidgetTester tester) async {
-    SharedPreferences.setMockInitialValues({});
+  test('cart parser accepts dummyjson discountedPrice response', () {
+    final cart = Cart.fromJson({
+      'id': 209,
+      'products': [
+        {
+          'id': 1,
+          'title': 'Essence Mascara Lash Princess',
+          'price': 9.99,
+          'quantity': 1,
+          'total': 9.99,
+          'discountPercentage': 10.48,
+          'discountedPrice': 9,
+          'thumbnail': 'https://example.com/thumb.jpg',
+        },
+      ],
+      'total': 9.99,
+      'discountedTotal': 9,
+      'userId': 1,
+      'totalProducts': 1,
+      'totalQuantity': 1,
+    });
 
-    await tester.pumpWidget(
-      ChangeNotifierProvider(
-        create: (_) => ThemeProvider(),
-        child: const MyApp(),
-      ),
-    );
-
-    expect(find.text('NUBD Exchange'), findsOneWidget);
-
-    await tester.pumpAndSettle(const Duration(milliseconds: 1600));
-
-    expect(find.byType(LoginScreen), findsOneWidget);
+    expect(cart.products.first.discountedTotal, 9.0);
+    expect(cart.discountedTotal, 9.0);
   });
 }

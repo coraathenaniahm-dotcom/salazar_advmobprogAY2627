@@ -15,11 +15,13 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
 
+  // Submit the login form.
   Future<void> _login() async {
     setState(() {
       _isLoading = true;
     });
 
+    // Validate both required fields.
     if (_usernameController.text.trim().isEmpty ||
         _passwordController.text.trim().isEmpty) {
       setState(() {
@@ -43,6 +45,7 @@ class _LoginScreenState extends State<LoginScreen> {
         _isLoading = false;
       });
 
+      // Navigate after a successful login.
       Navigator.pushReplacementNamed(context, '/home', arguments: response);
     } catch (e) {
       if (!mounted) return;
@@ -59,6 +62,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
+    // Release the text controllers.
     _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -149,6 +153,12 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                       ),
                     ),
+                          TextButton(
+                            onPressed: _isLoading
+                                ? null
+                                : () => Navigator.pushNamed(context, '/signup'),
+                            child: const Text('Create an account'),
+                          ),
                   ],
                 ),
               ),
@@ -159,6 +169,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  // Build a reusable login field.
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,

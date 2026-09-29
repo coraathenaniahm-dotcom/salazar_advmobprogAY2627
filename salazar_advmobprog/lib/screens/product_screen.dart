@@ -47,7 +47,7 @@ class _ProductScreenState extends State<ProductScreen> {
                 hintText: 'Search products',
                 prefixIcon: const Icon(Icons.search),
                 filled: true,
-                fillColor: Colors.grey.shade100,
+                fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                 contentPadding: EdgeInsets.symmetric(
                   horizontal: 12.w,
                   vertical: 14.h,

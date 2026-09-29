@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:salazar_advmobprog/constants.dart';
+import 'package:salazar_advmobprog/screens/cart_screen.dart';
+import 'package:salazar_advmobprog/screens/product_screen.dart';
+import 'package:salazar_advmobprog/screens/profile_screen.dart';
 import 'package:salazar_advmobprog/widgets/custom_font.dart';
-
-import 'product_screen.dart';
-import 'cart_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final String username;
@@ -33,6 +33,9 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Scaffold(
         appBar: AppBar(
           automaticallyImplyLeading: false,
+          backgroundColor: _isOnCartScreen
+              ? const Color(0xFF3D5A9B)
+              : null,
           elevation: 2,
           leading: _isOnCartScreen
               ? IconButton(
@@ -47,7 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
           title: CustomText(
             text: _isOnCartScreen ? 'Cart' : 'Shop',
             fontSize: 20.sp,
-            color: fbLightPrimary,
+            color: _isOnCartScreen ? Colors.white : fbLightPrimary,
             fontWeight: FontWeight.w800,
           ),
         ),
@@ -78,7 +81,23 @@ class _HomeScreenState extends State<HomeScreen> {
                 _isOnCartScreen = true;
               });
             } else if (index == 2) {
-              Navigator.pushNamed(context, '/profile');
+              Navigator.push<int>(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ProfileScreen(),
+                ),
+              ).then((selectedIndex) {
+                if (!mounted) return;
+                if (selectedIndex == 0) {
+                  setState(() {
+                    _isOnCartScreen = false;
+                  });
+                } else if (selectedIndex == 1) {
+                  setState(() {
+                    _isOnCartScreen = true;
+                  });
+                }
+              });
             }
           },
           items: const [
@@ -101,7 +120,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 },
                 backgroundColor: const Color(0xFFFFBE1B),
-                foregroundColor: Colors.black,
+                foregroundColor: Theme.of(context).colorScheme.onSurface,
                 elevation: 6,
                 shape: const CircleBorder(),
                 child: const Icon(Icons.message, size: 22),
