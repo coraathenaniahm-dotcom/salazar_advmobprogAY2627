@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../services/user_service.dart';
 
@@ -30,27 +31,39 @@ class _SignupScreenState extends State<SignupScreen> {
     });
 
     try {
-      final user = await _userService.register({
-        'firstName': _firstNameController.text.trim(),
-        'lastName': _lastNameController.text.trim(),
-        'age': int.parse(_ageController.text.trim()),
-        'phone': _contactNoController.text.trim(),
-        'username': _usernameController.text.trim(),
-        'email': _emailController.text.trim(),
-        'password': _passwordController.text,
-      });
+      await _userService.createAccount(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+        username: _usernameController.text.trim(),
+        firstName: _firstNameController.text.trim(),
+        lastName: _lastNameController.text.trim(),
+      );
 
       if (!mounted) return;
       Navigator.pushNamedAndRemoveUntil(
         context,
         '/home',
         (route) => false,
-        arguments: user,
       );
     } catch (error) {
       if (!mounted) return;
+      final message = switch (error) {
+        FirebaseAuthException(code: 'operation-not-allowed') =>
+          'Email/password signup is disabled. Enable it in Firebase Console under Authentication > Sign-in method.',
+        FirebaseAuthException(code: 'email-already-in-use') =>
+          'This email already has an account. Log in instead.',
+        FirebaseAuthException(code: 'weak-password') =>
+          'Choose a stronger password and try again.',
+        FirebaseAuthException(code: 'network-request-failed') =>
+          'Could not connect to Firebase. Check the emulator internet connection and try again.',
+        _ when error.toString().contains('ADMIN_ONLY_OPERATION') =>
+          'Email/password signup is disabled. Enable it in Firebase Console under Authentication > Sign-in method.',
+        _ when error.toString().toLowerCase().contains('connection reset') =>
+          'The connection to Firebase was reset. Check the emulator internet connection and try again.',
+        _ => 'Signup failed: $error',
+      };
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Signup failed: $error')),
+        SnackBar(content: Text(message)),
       );
     } finally {
       if (mounted) {

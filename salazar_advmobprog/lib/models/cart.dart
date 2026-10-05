@@ -35,6 +35,68 @@ class Cart {
     );
   }
 
+  static Cart? fromUserCartsResponse(
+    Map<String, dynamic> json,
+    int userId,
+  ) {
+    final carts = json['carts'];
+    if (carts is List) {
+      for (final item in carts) {
+        if (item is Map) {
+          final cartJson = Map<String, dynamic>.from(item);
+          final cartUserId = int.tryParse('${cartJson['userId']}');
+          if (cartUserId == userId) return Cart.fromJson(cartJson);
+        }
+      }
+      return null;
+    }
+
+    if (json['products'] is List) return Cart.fromJson(json);
+    return null;
+  }
+
+  Cart mergedWith(Cart additions) {
+    final mergedProducts = [...products];
+
+    for (final addition in additions.products) {
+      final index = mergedProducts.indexWhere((item) => item.id == addition.id);
+      if (index < 0) {
+        mergedProducts.add(addition);
+        continue;
+      }
+
+      final current = mergedProducts[index];
+      final quantity = current.quantity + addition.quantity;
+      mergedProducts[index] = CartProduct(
+        id: current.id,
+        title: current.title,
+        price: current.price,
+        quantity: quantity,
+        total: current.price * quantity,
+        discountPercentage: current.discountPercentage,
+        discountedTotal:
+            current.price * (1 - current.discountPercentage / 100) * quantity,
+        thumbnail: current.thumbnail,
+      );
+    }
+
+    return Cart(
+      id: id,
+      products: mergedProducts,
+      total: mergedProducts.fold<double>(0, (sum, item) => sum + item.total),
+      discountedTotal: mergedProducts.fold<double>(
+        0,
+        (sum, item) => sum + item.discountedTotal,
+      ),
+      userId: userId,
+      totalProducts: mergedProducts.length,
+      totalQuantity: mergedProducts.fold<int>(
+        0,
+        (sum, item) => sum + item.quantity,
+      ),
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,

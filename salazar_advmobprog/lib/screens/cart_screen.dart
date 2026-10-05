@@ -66,6 +66,21 @@ class _CartScreenState extends State<CartScreen> {
           }
 
           final cart = snapshot.data!;
+          final subtotal = cart.products.fold<double>(
+            0,
+            (sum, product) =>
+                sum + product.price * (quantities[product.id] ?? product.quantity),
+          );
+          final total = cart.products.fold<double>(
+            0,
+            (sum, product) =>
+                sum +
+                product.price *
+                    (1 - product.discountPercentage / 100) *
+                    (quantities[product.id] ?? product.quantity),
+          );
+          final discount = subtotal - total;
+
           return Column(
             children: [
               Expanded(
@@ -151,7 +166,7 @@ class _CartScreenState extends State<CartScreen> {
                                           ),
                                         CustomText(
                                           text:
-                                              '-\$${(originalPrice - discountedPrice).toStringAsFixed(2)} total',
+                                              '-\$${((originalPrice - discountedPrice) * currentQty).toStringAsFixed(2)} total',
                                           fontSize: 10.sp,
                                           color: Colors.grey[600],
                                         ),
@@ -242,13 +257,13 @@ class _CartScreenState extends State<CartScreen> {
                           color: Colors.grey,
                         ),
                         CustomText(
-                          text: '\$${cart.total.toStringAsFixed(2)}',
+                          text: '\$${subtotal.toStringAsFixed(2)}',
                           fontSize: 13.sp,
                           fontWeight: FontWeight.w600,
                         ),
                       ],
                     ),
-                    if (cart.total != cart.discountedTotal) ...[
+                    if (discount > 0) ...[
                       SizedBox(height: 8.h),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -260,7 +275,7 @@ class _CartScreenState extends State<CartScreen> {
                           ),
                           CustomText(
                             text:
-                                '-\$${(cart.total - cart.discountedTotal).toStringAsFixed(2)}',
+                                '-\$${discount.toStringAsFixed(2)}',
                             fontSize: 13.sp,
                             fontWeight: FontWeight.w600,
                             color: const Color(0xFFFFA500),
@@ -278,7 +293,7 @@ class _CartScreenState extends State<CartScreen> {
                           fontWeight: FontWeight.bold,
                         ),
                         CustomText(
-                          text: '\$${cart.discountedTotal.toStringAsFixed(2)}',
+                          text: '\$${total.toStringAsFixed(2)}',
                           fontSize: 15.sp,
                           fontWeight: FontWeight.bold,
                           color: const Color(0xFFFFA500),

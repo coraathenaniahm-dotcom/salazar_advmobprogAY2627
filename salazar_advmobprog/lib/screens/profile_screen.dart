@@ -411,19 +411,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        // Placeholder for the chat action.
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Chat feature coming soon')),
-          );
-        },
-        backgroundColor: const Color(0xFFFFBE1B),
-        foregroundColor: Theme.of(context).colorScheme.onSurface,
-        elevation: 6,
-        shape: const CircleBorder(),
-        child: const Icon(Icons.message, size: 22),
-      ),
     );
   }
 }

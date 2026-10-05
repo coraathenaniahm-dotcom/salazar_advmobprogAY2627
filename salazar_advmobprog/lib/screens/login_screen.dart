@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../services/user_service.dart';
 
@@ -11,7 +12,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final UserService userService = UserService();
-  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _identifierController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
 
@@ -22,21 +23,23 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     // Validate both required fields.
-    if (_usernameController.text.trim().isEmpty ||
+    if (_identifierController.text.trim().isEmpty ||
         _passwordController.text.trim().isEmpty) {
       setState(() {
         _isLoading = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter username and password')),
+        const SnackBar(
+          content: Text('Please enter your email or username and password'),
+        ),
       );
       return;
     }
 
     try {
       final response = await userService.login(
-        _usernameController.text.trim(),
-        _passwordController.text.trim(),
+        _identifierController.text.trim(),
+        _passwordController.text,
       );
 
       if (!mounted) return;
@@ -45,9 +48,29 @@ class _LoginScreenState extends State<LoginScreen> {
         _isLoading = false;
       });
 
-      // Navigate after a successful login.
       Navigator.pushReplacementNamed(context, '/home', arguments: response);
-    } catch (e) {
+    } on FirebaseAuthException catch (error) {
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      final message = switch (error.code) {
+        'invalid-email' => 'Enter a valid email address.',
+        'user-disabled' => 'This account has been disabled.',
+        'user-not-found' ||
+        'wrong-password' ||
+        'invalid-credential' => 'Incorrect email or password.',
+        'too-many-requests' => 'Too many attempts. Please try again later.',
+        'network-request-failed' =>
+          'Could not connect to Firebase. Check your internet connection.',
+        _ => error.message ?? 'Please try again.',
+      };
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Login failed: $message')));
+    } catch (error) {
       if (!mounted) return;
 
       setState(() {
@@ -56,14 +79,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Login failed: ${e.toString()}')));
+      ).showSnackBar(SnackBar(content: Text('Login failed: $error')));
     }
   }
 
   @override
   void dispose() {
     // Release the text controllers.
-    _usernameController.dispose();
+    _identifierController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -108,8 +131,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 27),
                     _buildTextField(
-                      controller: _usernameController,
-                      label: 'Username',
+                      controller: _identifierController,
+                      label: 'Email or username',
                       textInputAction: TextInputAction.next,
                     ),
                     const SizedBox(height: 11),
@@ -153,12 +176,12 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                       ),
                     ),
-                          TextButton(
-                            onPressed: _isLoading
-                                ? null
-                                : () => Navigator.pushNamed(context, '/signup'),
-                            child: const Text('Create an account'),
-                          ),
+                    TextButton(
+                      onPressed: _isLoading
+                          ? null
+                          : () => Navigator.pushNamed(context, '/signup'),
+                      child: const Text('Create an account'),
+                    ),
                   ],
                 ),
               ),
@@ -176,6 +199,7 @@ class _LoginScreenState extends State<LoginScreen> {
     bool obscureText = false,
     TextInputAction? textInputAction,
     ValueChanged<String>? onSubmitted,
+    TextInputType? keyboardType,
   }) {
     return SizedBox(
       height: 47,
@@ -183,6 +207,7 @@ class _LoginScreenState extends State<LoginScreen> {
         controller: controller,
         obscureText: obscureText,
         textInputAction: textInputAction,
+        keyboardType: keyboardType,
         onSubmitted: onSubmitted,
         style: const TextStyle(color: Color(0xFF303039), fontSize: 13),
         decoration: InputDecoration(

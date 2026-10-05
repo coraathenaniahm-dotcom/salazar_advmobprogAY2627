@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:salazar_advmobprog/constants.dart';
 import 'package:salazar_advmobprog/screens/cart_screen.dart';
+import 'package:salazar_advmobprog/screens/chat_screen.dart';
 import 'package:salazar_advmobprog/screens/product_screen.dart';
 import 'package:salazar_advmobprog/screens/profile_screen.dart';
 import 'package:salazar_advmobprog/widgets/custom_font.dart';
@@ -33,9 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Scaffold(
         appBar: AppBar(
           automaticallyImplyLeading: false,
-          backgroundColor: _isOnCartScreen
-              ? const Color(0xFF3D5A9B)
-              : null,
+          backgroundColor: _isOnCartScreen ? const Color(0xFF3D5A9B) : null,
           elevation: 2,
           leading: _isOnCartScreen
               ? IconButton(
@@ -83,9 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
             } else if (index == 2) {
               Navigator.push<int>(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const ProfileScreen(),
-                ),
+                MaterialPageRoute(builder: (context) => const ProfileScreen()),
               ).then((selectedIndex) {
                 if (!mounted) return;
                 if (selectedIndex == 0) {
@@ -115,8 +112,9 @@ class _HomeScreenState extends State<HomeScreen> {
         floatingActionButton: !_isOnCartScreen
             ? FloatingActionButton(
                 onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Chat feature coming soon')),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const ChatScreen()),
                   );
                 },
                 backgroundColor: const Color(0xFFFFBE1B),

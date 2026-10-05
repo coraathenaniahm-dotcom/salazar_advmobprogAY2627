@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -11,6 +12,28 @@ import '../models/user.dart';
 class UserService {
   static const String dummyJsonLoginType = 'dummyjson';
   static const String firebaseLoginType = 'firebase';
+
+  static User userFromFirebaseProfile({
+    required String uid,
+    required String email,
+    String? displayName,
+    Map<String, dynamic>? profileData,
+  }) {
+    final profile = profileData ?? const {};
+    final username =
+        (profile['username'] ?? displayName ?? email.split('@').first)
+            .toString()
+            .trim();
+
+    return User(
+      id: uid.hashCode.abs() % 1000000007,
+      firstName: (profile['firstName'] ?? '').toString(),
+      lastName: (profile['lastName'] ?? '').toString(),
+      username: username,
+      email: email,
+      image: (profile['image'] ?? '').toString(),
+    );
+  }
 
   final firebase_auth.FirebaseAuth firebaseAuth =
       firebase_auth.FirebaseAuth.instance;
@@ -26,22 +49,128 @@ class UserService {
       email: email,
       password: password,
     );
+
+    final firebaseUser = credential.user;
+    if (firebaseUser == null) {
+      throw firebase_auth.FirebaseAuthException(
+        code: 'no-user',
+        message: 'No user was returned from Firebase.',
+      );
+    }
+
+    final profileDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(firebaseUser.uid)
+        .get();
+
+    final user = userFromFirebaseProfile(
+      uid: firebaseUser.uid,
+      email: firebaseUser.email ?? email,
+      displayName: firebaseUser.displayName,
+      profileData: profileDoc.data(),
+    );
+
     final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', true);
     await prefs.setString('loginType', firebaseLoginType);
+    await prefs.setString('userData', jsonEncode(user.toJson()));
     return credential;
   }
 
   Future<firebase_auth.UserCredential> createAccount({
     required String email,
     required String password,
+    String? username,
+    String? firstName,
+    String? lastName,
   }) async {
-    final credential = await firebaseAuth.createUserWithEmailAndPassword(
+    final credential = await _createOrResumeFirebaseAccount(
       email: email,
       password: password,
     );
+
+    final firebaseUser = credential.user;
+    if (firebaseUser == null) {
+      throw firebase_auth.FirebaseAuthException(
+        code: 'no-user',
+        message: 'No user was created in Firebase.',
+      );
+    }
+
+    final resolvedUsername =
+        (username ?? firebaseUser.displayName ?? email.split('@').first).trim();
+    final profileData = {
+      'uid': firebaseUser.uid,
+      'firstName': firstName ?? '',
+      'lastName': lastName ?? '',
+      'username': resolvedUsername,
+      'email': email,
+      'image': '',
+      'createdAt': FieldValue.serverTimestamp(),
+    };
+
+    await firebaseUser.updateDisplayName(resolvedUsername);
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(firebaseUser.uid)
+        .set(profileData, SetOptions(merge: true));
+
+    final user = userFromFirebaseProfile(
+      uid: firebaseUser.uid,
+      email: email,
+      displayName: resolvedUsername,
+      profileData: profileData,
+    );
+
     final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', true);
     await prefs.setString('loginType', firebaseLoginType);
+    await prefs.setString('userData', jsonEncode(user.toJson()));
     return credential;
+  }
+
+  Future<firebase_auth.UserCredential> _createOrResumeFirebaseAccount({
+    required String email,
+    required String password,
+  }) async {
+    Future<firebase_auth.UserCredential> create() {
+      return firebaseAuth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+    }
+
+    Future<firebase_auth.UserCredential> resumeExistingAccount() {
+      return firebaseAuth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+    }
+
+    try {
+      return await create();
+    } on firebase_auth.FirebaseAuthException catch (error) {
+      if (error.code == 'email-already-in-use') {
+        return resumeExistingAccount();
+      }
+
+      final message = '${error.code} ${error.message}'.toLowerCase();
+      final isTransientNetworkError =
+          message.contains('connection reset') ||
+          message.contains('network request failed') ||
+          message.contains('timed out');
+      if (!isTransientNetworkError) rethrow;
+
+      await Future<void>.delayed(const Duration(seconds: 1));
+      try {
+        return await create();
+      } on firebase_auth.FirebaseAuthException catch (retryError) {
+        if (retryError.code == 'email-already-in-use') {
+          return resumeExistingAccount();
+        }
+        rethrow;
+      }
+    }
   }
 
   Future<void> signOut() async {
@@ -124,10 +253,9 @@ class UserService {
       final userId = userData['id'];
       if (userId == null) throw Exception('No saved user session');
 
-      final updatedUser = await _updateDummyJsonUser(
-        userId,
-        {'password': newPassword},
-      );
+      final updatedUser = await _updateDummyJsonUser(userId, {
+        'password': newPassword,
+      });
       await _saveUserData(updatedUser);
       return;
     }
@@ -149,56 +277,54 @@ class UserService {
     await currentUser.updatePassword(newPassword);
   }
 
-  // Authenticate a user and save the session.
-  Future<User> login(String username, String password) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$host/auth/login'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'username': username,
-          'password': password,
-        }),
-      ).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () => http.Response('{"message": "Request timeout"}', 408),
-      );
-
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> data = jsonDecode(response.body);
-        final user = User.fromJson(data);
-
-        final prefs = await SharedPreferences.getInstance();
-        // Save the authenticated user locally.
-        await prefs.setBool('isLoggedIn', true);
-        await prefs.setString('userData', jsonEncode(user.toJson()));
-        await prefs.setString('loginType', dummyJsonLoginType);
-
-        return user;
-      } else if (response.statusCode == 408) {
-        throw Exception('Request timeout - Check internet');
-      } else {
-        throw Exception('Login failed: ${response.statusCode}');
-      }
-    } on SocketException {
-      throw Exception('Network error - Check internet connection');
-    } on http.ClientException catch (e) {
-      throw Exception('Connection error: ${e.message}');
-    } catch (e) {
-      throw Exception('Error logging in: $e');
+  // Emails use Firebase; usernames use the DummyJSON demo account endpoint.
+  Future<User> login(String identifier, String password) async {
+    if (identifier.contains('@')) {
+      await signIn(email: identifier, password: password);
+      return User.fromJson(await getUserData());
     }
+
+    final response = await http
+        .post(
+          Uri.parse('$host/auth/login'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'username': identifier,
+            'password': password,
+          }),
+        )
+        .timeout(const Duration(seconds: 10));
+
+    if (response.statusCode != 200) {
+      final errorData = jsonDecode(response.body);
+      final message = errorData is Map<String, dynamic>
+          ? errorData['message']?.toString()
+          : null;
+      throw Exception(
+        message ?? 'DummyJSON login failed: ${response.statusCode}',
+      );
+    }
+
+    final user = User.fromJson(jsonDecode(response.body));
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', true);
+    await prefs.setString('userData', jsonEncode(user.toJson()));
+    await prefs.setString('loginType', dummyJsonLoginType);
+    return user;
   }
 
   // Fetch one user by ID.
   Future<User> getUserById(int userId) async {
     try {
-      final response = await http.get(
-        Uri.parse('$host/users/$userId'),
-        headers: {'Content-Type': 'application/json'},
-      ).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () => http.Response('{}', 408),
-      );
+      final response = await http
+          .get(
+            Uri.parse('$host/users/$userId'),
+            headers: {'Content-Type': 'application/json'},
+          )
+          .timeout(
+            const Duration(seconds: 10),
+            onTimeout: () => http.Response('{}', 408),
+          );
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
@@ -220,13 +346,15 @@ class UserService {
   // Fetch all users.
   Future<List<User>> getAllUsers() async {
     try {
-      final response = await http.get(
-        Uri.parse('$host/users'),
-        headers: {'Content-Type': 'application/json'},
-      ).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () => http.Response('{"users": []}', 408),
-      );
+      final response = await http
+          .get(
+            Uri.parse('$host/users'),
+            headers: {'Content-Type': 'application/json'},
+          )
+          .timeout(
+            const Duration(seconds: 10),
+            onTimeout: () => http.Response('{"users": []}', 408),
+          );
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
@@ -254,14 +382,16 @@ class UserService {
   // Register a user and save the session.
   Future<User> register(Map<String, dynamic> userData) async {
     try {
-      final response = await http.post(
-        Uri.parse('$host/users/add'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(userData),
-      ).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () => http.Response('{}', 408),
-      );
+      final response = await http
+          .post(
+            Uri.parse('$host/users/add'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode(userData),
+          )
+          .timeout(
+            const Duration(seconds: 10),
+            onTimeout: () => http.Response('{}', 408),
+          );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final Map<String, dynamic> data = jsonDecode(response.body);

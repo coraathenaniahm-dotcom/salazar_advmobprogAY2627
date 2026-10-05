@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:salazar_advmobprog/models/product.dart';
-import 'package:salazar_advmobprog/services/cart_service.dart';
 import 'package:salazar_advmobprog/widgets/custom_text.dart';
 
 class ProductDetailScreen extends StatefulWidget {
@@ -22,9 +21,6 @@ class ProductDetailScreen extends StatefulWidget {
 class _ProductDetailScreenState
     extends State<ProductDetailScreen> {
   int _quantity = 1;
-  bool _isAddingToCart = false;
-
-  final CartService _cartService = CartService();
 
   @override
   Widget build(BuildContext context) {
@@ -212,17 +208,13 @@ class _ProductDetailScreenState
                 width: double.infinity,
                 height: 50.h,
                 child: ElevatedButton(
-                  onPressed: _isAddingToCart
-                      ? null
-                      : _addToCart,
+                  onPressed: _showCartUnchangedMessage,
                   style:
                       ElevatedButton.styleFrom(
                     backgroundColor:
                         const Color(0xFF394B9D),
                     foregroundColor:
                         Colors.white,
-                    disabledBackgroundColor:
-                        const Color(0xFF394B9D),
                     minimumSize:
                         Size.fromHeight(50.h),
                     shape:
@@ -231,27 +223,12 @@ class _ProductDetailScreenState
                           BorderRadius.circular(12.r),
                     ),
                   ),
-                  child: _isAddingToCart
-                      ? SizedBox(
-                          height: 24.h,
-                          width: 24.w,
-                          child:
-                              const CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor:
-                                AlwaysStoppedAnimation<
-                                    Color>(
-                              Colors.white,
-                            ),
-                          ),
-                        )
-                      : CustomText(
-                          text: 'Add to Cart',
-                          fontSize: 16.sp,
-                          fontWeight:
-                              FontWeight.bold,
-                          color: Colors.white,
-                        ),
+                  child: CustomText(
+                    text: 'Add to Cart',
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ],
@@ -261,58 +238,10 @@ class _ProductDetailScreenState
     );
   }
 
-  Future<void> _addToCart() async {
-    setState(() {
-      _isAddingToCart = true;
-    });
-
-    try {
-      await _cartService.addToCart(
-        widget.product.id,
-        _quantity,
-        userId: widget.userId,
-      );
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: CustomText(
-            text:
-                '${widget.product.title} added to cart',
-            fontSize: 14.sp,
-            color: Colors.white,
-          ),
-          duration:
-              const Duration(seconds: 2),
-          backgroundColor: Colors.green,
-        ),
-      );
-
-      setState(() {
-        _quantity = 1;
-      });
-    } catch (e) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: CustomText(
-            text: e.toString(),
-            fontSize: 14.sp,
-            color: Colors.white,
-          ),
-          duration:
-              const Duration(seconds: 3),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isAddingToCart = false;
-        });
-      }
-    }
+  void _showCartUnchangedMessage() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Item was not added to the cart')),
+    );
   }
+
 }
